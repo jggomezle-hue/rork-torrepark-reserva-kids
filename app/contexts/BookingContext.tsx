@@ -1,6 +1,6 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useState, useCallback, useMemo } from 'react';
-import { trpcClient } from '@/lib/trpc';
+import { EMAIL_CONFIG } from '@/constants/emailConfig';
 
 export interface Booking {
   id: string;
@@ -29,19 +29,41 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
         createdAt: new Date().toISOString(),
       };
 
-      console.log('📧 Enviando email a través del backend...');
+      console.log('📧 Enviando email con EmailJS...');
       console.log('📋 Datos de la reserva:', bookingData);
 
-      await trpcClient.booking.sendEmail.mutate({
-        date: bookingData.date,
-        time: bookingData.time,
-        numberOfKids: bookingData.numberOfKids,
-        parentName: bookingData.parentName,
-        email: bookingData.email,
-        phone: bookingData.phone,
-        notes: bookingData.notes,
+      const templateParams = {
+        to_email: EMAIL_CONFIG.recipientEmail,
+        from_name: bookingData.parentName,
+        booking_date: bookingData.date,
+        booking_time: bookingData.time,
+        number_of_kids: bookingData.numberOfKids.toString(),
+        parent_name: bookingData.parentName,
+        parent_email: bookingData.email,
+        parent_phone: bookingData.phone,
+        notes: bookingData.notes || 'Ninguna',
+      };
+
+      const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          service_id: EMAIL_CONFIG.serviceId,
+          template_id: EMAIL_CONFIG.templateId,
+          user_id: EMAIL_CONFIG.publicKey,
+          accessToken: EMAIL_CONFIG.privateKey,
+          template_params: templateParams,
+        }),
       });
-      
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error en la respuesta:', errorText);
+        throw new Error(`Error al enviar email: ${response.status}`);
+      }
+
       console.log('✅ Email enviado correctamente');
       
       setBookings(prev => [...prev, { ...newBooking, status: 'confirmed' }]);
