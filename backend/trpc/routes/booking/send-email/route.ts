@@ -60,8 +60,10 @@ export const sendEmailRoute = publicProcedure
         throw new Error(`Error al enviar email: ${response.status} - ${errorText}`);
       }
 
+      const responseText = await response.text();
+      console.log('📬 Texto de respuesta:', responseText);
       console.log('✅ Email enviado correctamente desde el servidor');
-      return { success: true };
+      return { success: true, message: 'Email enviado correctamente' };
     } catch (error: any) {
       console.error('❌ Error al enviar email:', error);
       throw new Error('Error al enviar email: ' + error.message);
