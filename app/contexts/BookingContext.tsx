@@ -58,10 +58,13 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
         }),
       });
 
+      console.log('📡 Respuesta del servidor - Status:', response.status);
+      const responseText = await response.text();
+      console.log('📡 Respuesta del servidor - Texto:', responseText);
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error en la respuesta:', errorText);
-        throw new Error(`Error al enviar email: ${response.status}`);
+        console.error('❌ Error en la respuesta:', responseText);
+        throw new Error(`Error al enviar email: ${response.status} - ${responseText}`);
       }
 
       console.log('✅ Email enviado correctamente');
