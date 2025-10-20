@@ -32,6 +32,7 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
 
       console.log('🔧 Inicializando EmailJS con la configuración:');
       console.log('  - Public Key:', EMAIL_CONFIG.publicKey);
+      console.log('  - Private Key:', EMAIL_CONFIG.privateKey?.substring(0, 5) + '***');
       console.log('  - Service ID:', EMAIL_CONFIG.serviceId);
       console.log('  - Template ID:', EMAIL_CONFIG.templateId);
       console.log('  - Recipient Email:', EMAIL_CONFIG.recipientEmail);
@@ -39,6 +40,7 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
       try {
         emailjs.init({
           publicKey: EMAIL_CONFIG.publicKey,
+          privateKey: EMAIL_CONFIG.privateKey,
         });
         console.log('✅ EmailJS inicializado correctamente');
       } catch (initError: any) {
