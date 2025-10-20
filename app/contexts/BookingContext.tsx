@@ -30,6 +30,11 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
         createdAt: new Date().toISOString(),
       };
 
+      console.log('🔧 Inicializando EmailJS con la configuración:');
+      console.log('  - Public Key:', EMAIL_CONFIG.publicKey);
+      console.log('  - Service ID:', EMAIL_CONFIG.serviceId);
+      console.log('  - Template ID:', EMAIL_CONFIG.templateId);
+      
       emailjs.init({
         publicKey: EMAIL_CONFIG.publicKey,
       });
@@ -46,24 +51,26 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
         notes: bookingData.notes || 'Ninguna',
       };
 
-      console.log(`📧 Enviando confirmación de reserva a ${EMAIL_CONFIG.recipientEmail}`);
+      console.log('📧 Enviando email con los parámetros:');
+      console.log(JSON.stringify(templateParams, null, 2));
 
-      try {
-        await emailjs.send(
-          EMAIL_CONFIG.serviceId,
-          EMAIL_CONFIG.templateId,
-          templateParams
-        );
-        console.log('✅ Email enviado correctamente');
-      } catch (emailError) {
-        console.error('❌ Error al enviar email:', emailError);
-      }
+      const response = await emailjs.send(
+        EMAIL_CONFIG.serviceId,
+        EMAIL_CONFIG.templateId,
+        templateParams
+      );
+      
+      console.log('✅ Email enviado correctamente. Respuesta:', response);
       
       setBookings(prev => [...prev, { ...newBooking, status: 'confirmed' }]);
       setIsSubmitting(false);
       return true;
-    } catch (error) {
-      console.error('❌ Error al crear reserva:', error);
+    } catch (error: any) {
+      console.error('❌ Error al enviar email:');
+      console.error('  - Mensaje:', error?.message || 'Sin mensaje');
+      console.error('  - Status:', error?.status || 'Sin status');
+      console.error('  - Text:', error?.text || 'Sin texto');
+      console.error('  - Error completo:', JSON.stringify(error, null, 2));
       setIsSubmitting(false);
       return false;
     }
