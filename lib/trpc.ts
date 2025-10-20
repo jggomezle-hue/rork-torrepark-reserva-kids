@@ -20,6 +20,11 @@ export const trpcClient = createTRPCClient<AppRouter>({
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
+      fetch: (url, options) => {
+        console.log('🌐 tRPC Fetch Request:', url);
+        console.log('📦 Options:', JSON.stringify(options, null, 2));
+        return fetch(url, options);
+      },
       headers() {
         return {
           'Content-Type': 'application/json',
