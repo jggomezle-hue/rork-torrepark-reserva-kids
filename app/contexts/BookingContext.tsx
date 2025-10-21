@@ -117,22 +117,25 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
             <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
             <script type="text/javascript">
               (function() {
+                console.log('📧 WebView cargado, inicializando EmailJS...');
+                
                 emailjs.init({
                   publicKey: '${EMAIL_CONFIG.publicKey}',
                   privateKey: '${EMAIL_CONFIG.privateKey}',
                 });
 
+                console.log('📤 Enviando email...');
                 emailjs.send(
                   '${EMAIL_CONFIG.serviceId}',
                   '${EMAIL_CONFIG.templateId}',
                   ${JSON.stringify(templateParams)}
                 ).then(
                   function(response) {
-                    console.log('SUCCESS!', response.status, response.text);
+                    console.log('✅ SUCCESS!', response.status, response.text);
                     window.ReactNativeWebView?.postMessage(JSON.stringify({ success: true }));
                   },
                   function(error) {
-                    console.log('FAILED...', error);
+                    console.error('❌ FAILED...', error);
                     window.ReactNativeWebView?.postMessage(JSON.stringify({ success: false, error: error }));
                   }
                 );
@@ -154,13 +157,27 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
             resolve(true);
           }, 3000);
         } else {
+          console.log('📱 Configurando WebView para Android/iOS...');
+          
+          const timeoutId = setTimeout(() => {
+            console.log('⏱️ Timeout: Email no enviado en 15 segundos');
+            delete (global as any).__emailWebView;
+            resolve(false);
+          }, 15000);
+
           (global as any).__emailWebView = {
             html: htmlContent,
-            onMessage: (success: boolean) => resolve(success),
+            onMessage: (success: boolean) => {
+              console.log('📨 Mensaje recibido del WebView:', success);
+              clearTimeout(timeoutId);
+              resolve(success);
+            },
           };
+          
+          console.log('✅ WebView configurado y listo');
         }
       } catch (error) {
-        console.error('Error en sendEmailViaWebMethod:', error);
+        console.error('❌ Error en sendEmailViaWebMethod:', error);
         resolve(false);
       }
     });

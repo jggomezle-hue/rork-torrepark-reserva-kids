@@ -34,20 +34,25 @@ export default function BookingScreen() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [tempDateValue, setTempDateValue] = useState<string>('');
+  const [showWebView, setShowWebView] = useState<boolean>(false);
   const webViewRef = useRef<WebViewType | null>(null);
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
       const checkWebView = setInterval(() => {
         const emailWebView = (global as any).__emailWebView;
-        if (emailWebView?.html) {
+        if (emailWebView?.html && !showWebView) {
           console.log('📱 WebView de email detectado en Android/iOS');
+          setShowWebView(true);
+        } else if (!emailWebView?.html && showWebView) {
+          console.log('🗑️ WebView de email removido');
+          setShowWebView(false);
         }
-      }, 1000);
+      }, 100);
 
       return () => clearInterval(checkWebView);
     }
-  }, []);
+  }, [showWebView]);
 
   const handleDateChange = (event: any, date?: Date) => {
     if (Platform.OS === 'android') {
@@ -341,7 +346,7 @@ export default function BookingScreen() {
           </TouchableOpacity>
         </View>
 
-        {Platform.OS !== 'web' && (global as any).__emailWebView?.html && (
+        {Platform.OS !== 'web' && showWebView && (global as any).__emailWebView?.html && (
           <WebView
             ref={webViewRef}
             source={{ html: (global as any).__emailWebView.html }}
