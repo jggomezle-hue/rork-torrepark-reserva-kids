@@ -7,12 +7,20 @@ export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
-    console.log('🔗 Base URL configurada:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
+    console.log('🔗 Base URL desde variable de entorno:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
     return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   }
 
+  if (process.env.EXPO_PUBLIC_TOOLKIT_URL) {
+    const toolkitUrl = process.env.EXPO_PUBLIC_TOOLKIT_URL;
+    const baseUrl = toolkitUrl.replace('/agent', '');
+    console.log('🔗 Base URL desde TOOLKIT_URL:', baseUrl);
+    return baseUrl;
+  }
+
   throw new Error(
-    "No base url found, please set EXPO_PUBLIC_RORK_API_BASE_URL"
+    "No base url found. Variables disponibles: " + 
+    JSON.stringify(Object.keys(process.env).filter(k => k.includes('EXPO') || k.includes('URL')))
   );
 };
 
