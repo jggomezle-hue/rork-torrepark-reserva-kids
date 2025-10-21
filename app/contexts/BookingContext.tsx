@@ -1,5 +1,6 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useState, useCallback, useMemo } from 'react';
+import { trpcClient } from '@/lib/trpc';
 
 export interface Booking {
   id: string;
@@ -28,49 +29,11 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
         createdAt: new Date().toISOString(),
       };
 
-      console.log('🚀 Enviando email a través del backend...');
+      console.log('🚀 Enviando email a través de tRPC...');
       console.log('📋 Datos de la reserva:', bookingData);
 
-      const baseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
-      if (!baseUrl) {
-        throw new Error('EXPO_PUBLIC_RORK_API_BASE_URL no está configurado');
-      }
-
-      console.log('🌐 URL del backend:', `${baseUrl}/api/booking/send-email`);
-
-      const response = await fetch(`${baseUrl}/api/booking/send-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bookingData),
-      });
-
-      console.log('📬 Status de respuesta:', response.status);
-      console.log('📬 Content-Type:', response.headers.get('content-type'));
-
-      if (!response.ok) {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
-          console.error('❌ Error del servidor:', errorData);
-          throw new Error(errorData.error || 'Error al enviar email');
-        } else {
-          const errorText = await response.text();
-          console.error('❌ Error del servidor (no JSON):', errorText.substring(0, 200));
-          throw new Error(`Error del servidor: ${response.status}`);
-        }
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const result = await response.json();
-        console.log('✅ Respuesta del servidor:', result);
-      } else {
-        const resultText = await response.text();
-        console.log('✅ Respuesta del servidor (no JSON):', resultText.substring(0, 200));
-        throw new Error('El servidor no devolvió JSON');
-      }
+      const result = await trpcClient.booking.sendEmail.mutate(bookingData);
+      console.log('✅ Respuesta del servidor:', result);
       
       setBookings(prev => [...prev, { ...newBooking, status: 'confirmed' }]);
       setIsSubmitting(false);
