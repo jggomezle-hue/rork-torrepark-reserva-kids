@@ -7,7 +7,7 @@ import { Platform } from "react-native";
 
 export const trpc = createTRPCReact<AppRouter>();
 
-const getBaseUrl = (): string => {
+export const getBaseUrl = (): string => {
   const envUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   if (envUrl && envUrl.length > 0) {
     console.log("🔗 Base URL (env EXPO_PUBLIC_RORK_API_BASE_URL):", envUrl);
@@ -26,7 +26,6 @@ const getBaseUrl = (): string => {
     return window.location.origin;
   }
 
-  // Native: try to derive LAN host from Expo dev server
   const host = (Constants as any)?.expoConfig?.hostUri?.split(":")[0] ?? (Constants as any)?.expoConfig?.hostUri;
   if (host) {
     const url = `http://${host}:3000`;
@@ -47,18 +46,15 @@ export const trpcClient = createTRPCClient<AppRouter>({
       transformer: superjson,
       fetch: async (url, options) => {
         console.log("🌐 tRPC Fetch Request:", url);
-        
         try {
           const response = await fetch(url, options);
           const contentType = response.headers.get("content-type") ?? "";
           console.log("📥 Response Status:", response.status, contentType);
-
           if (!contentType.includes("application/json")) {
             const text = await response.text();
             console.error("❌ Respuesta NO JSON (primeros 300 chars):", text.slice(0, 300));
             throw new Error(`Respuesta no JSON: ${response.status} ${contentType}\n${text.slice(0, 300)}`);
           }
-
           return response;
         } catch (error: any) {
           console.error("❌ Error en fetch:", error?.message || String(error));
