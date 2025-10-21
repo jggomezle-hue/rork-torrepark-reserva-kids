@@ -2,26 +2,42 @@ import { createTRPCReact } from "@trpc/react-query";
 import { createTRPCClient, httpLink } from "@trpc/client";
 import type { AppRouter } from "@/backend/trpc/app-router";
 import superjson from "superjson";
+import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 export const trpc = createTRPCReact<AppRouter>();
 
-const getBaseUrl = () => {
-  if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
-    console.log('🔗 Base URL desde variable de entorno:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
-    return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+const getBaseUrl = (): string => {
+  const envUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  if (envUrl && envUrl.length > 0) {
+    console.log("🔗 Base URL (env EXPO_PUBLIC_RORK_API_BASE_URL):", envUrl);
+    return envUrl;
   }
 
-  if (process.env.EXPO_PUBLIC_TOOLKIT_URL) {
-    const toolkitUrl = process.env.EXPO_PUBLIC_TOOLKIT_URL;
-    const baseUrl = toolkitUrl.replace('/agent', '');
-    console.log('🔗 Base URL desde TOOLKIT_URL:', baseUrl);
-    return baseUrl;
+  const tk = process.env.EXPO_PUBLIC_TOOLKIT_URL;
+  if (tk && tk.length > 0) {
+    const baseFromToolkit = tk.replace(/\/?agent.*/i, "");
+    console.log("🔗 Base URL (from TOOLKIT_URL):", baseFromToolkit);
+    return baseFromToolkit;
   }
 
-  throw new Error(
-    "No base url found. Variables disponibles: " + 
-    JSON.stringify(Object.keys(process.env).filter(k => k.includes('EXPO') || k.includes('URL')))
-  );
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    console.log("🔗 Base URL (web origin):", window.location.origin);
+    return window.location.origin;
+  }
+
+  // Native: try to derive LAN host from Expo dev server
+  const host = (Constants as any)?.expoConfig?.hostUri?.split(":")[0] ?? (Constants as any)?.expoConfig?.hostUri;
+  if (host) {
+    const url = `http://${host}:3000`;
+    console.log("🔗 Base URL (derived from Expo hostUri):", url);
+    return url;
+  }
+
+  if (Platform.OS === "android") return "http://10.0.2.2:3000";
+  if (Platform.OS === "ios") return "http://localhost:3000";
+
+  throw new Error("No se pudo determinar la URL base para la API");
 };
 
 export const trpcClient = createTRPCClient<AppRouter>({
@@ -30,31 +46,27 @@ export const trpcClient = createTRPCClient<AppRouter>({
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
       fetch: async (url, options) => {
-        console.log('🌐 tRPC Fetch Request:', url);
-        console.log('📦 Options:', JSON.stringify(options, null, 2));
+        console.log("🌐 tRPC Fetch Request:", url);
         
         try {
           const response = await fetch(url, options);
-          console.log('📥 Response Status:', response.status);
-          console.log('📥 Response Headers:', response.headers.get('content-type'));
-          
-          const contentType = response.headers.get('content-type') || '';
-          if (!contentType.includes('application/json')) {
+          const contentType = response.headers.get("content-type") ?? "";
+          console.log("📥 Response Status:", response.status, contentType);
+
+          if (!contentType.includes("application/json")) {
             const text = await response.text();
-            console.error('❌ Respuesta NO es JSON:', text.slice(0, 300));
-            throw new Error(`Respuesta no es JSON: ${response.status} - ${contentType}\n${text.slice(0, 300)}`);
+            console.error("❌ Respuesta NO JSON (primeros 300 chars):", text.slice(0, 300));
+            throw new Error(`Respuesta no JSON: ${response.status} ${contentType}\n${text.slice(0, 300)}`);
           }
-          
+
           return response;
         } catch (error: any) {
-          console.error('❌ Error en fetch:', error?.message || error);
+          console.error("❌ Error en fetch:", error?.message || String(error));
           throw error;
         }
       },
       headers() {
-        return {
-          'Content-Type': 'application/json',
-        };
+        return { "Content-Type": "application/json" };
       },
     }),
   ],
