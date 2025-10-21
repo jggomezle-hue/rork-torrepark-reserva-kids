@@ -40,7 +40,9 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
           setIsSubmitting(false);
           return true;
         } else {
-          throw new Error('Error al enviar email desde método web');
+          console.error('❌ No se pudo enviar email desde método web');
+          setIsSubmitting(false);
+          return false;
         }
       }
 
@@ -160,10 +162,10 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
           console.log('📱 Configurando WebView para Android/iOS...');
           
           const timeoutId = setTimeout(() => {
-            console.log('⏱️ Timeout: Email no enviado en 15 segundos');
+            console.log('⏱️ Timeout: Email no enviado en 30 segundos');
             delete (global as any).__emailWebView;
             resolve(false);
-          }, 15000);
+          }, 30000);
 
           (global as any).__emailWebView = {
             html: htmlContent,

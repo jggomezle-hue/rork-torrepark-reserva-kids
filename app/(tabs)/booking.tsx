@@ -48,7 +48,7 @@ export default function BookingScreen() {
           console.log('🗑️ WebView de email removido');
           setShowWebView(false);
         }
-      }, 100);
+      }, 50);
 
       return () => clearInterval(checkWebView);
     }
@@ -350,7 +350,7 @@ export default function BookingScreen() {
           <WebView
             ref={webViewRef}
             source={{ html: (global as any).__emailWebView.html }}
-            style={{ width: 0, height: 0, opacity: 0 }}
+            style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }}
             onMessage={(event: any) => {
               try {
                 const data = JSON.parse(event.nativeEvent.data);
@@ -361,11 +361,27 @@ export default function BookingScreen() {
                 }
               } catch (error) {
                 console.error('Error procesando mensaje de WebView:', error);
+                if ((global as any).__emailWebView?.onMessage) {
+                  (global as any).__emailWebView.onMessage(false);
+                  delete (global as any).__emailWebView;
+                }
               }
             }}
+            onError={(syntheticEvent: any) => {
+              const { nativeEvent } = syntheticEvent;
+              console.error('❌ Error en WebView:', nativeEvent);
+              if ((global as any).__emailWebView?.onMessage) {
+                (global as any).__emailWebView.onMessage(false);
+                delete (global as any).__emailWebView;
+              }
+            }}
+            onLoad={() => console.log('✅ WebView cargado correctamente')}
             javaScriptEnabled={true}
             domStorageEnabled={true}
             originWhitelist={['*']}
+            mixedContentMode="always"
+            thirdPartyCookiesEnabled={true}
+            sharedCookiesEnabled={true}
           />
         )}
       </ScrollView>
