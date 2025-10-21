@@ -1,6 +1,5 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useState, useCallback, useMemo } from 'react';
-import { Platform } from 'react-native';
 import { EMAIL_CONFIG } from '@/constants/emailConfig';
 
 export interface Booking {
@@ -30,28 +29,11 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
         createdAt: new Date().toISOString(),
       };
 
-      if (Platform.OS === 'android' || Platform.OS === 'ios') {
-        console.log('📱 Usando método web-compatible para Android/iOS...');
-        
-        const success = await sendEmailViaWebMethod(bookingData);
-        
-        if (success) {
-          console.log('✅ Email enviado correctamente desde Android/iOS');
-          setBookings(prev => [...prev, { ...newBooking, status: 'confirmed' }]);
-          setIsSubmitting(false);
-          return true;
-        } else {
-          console.error('❌ Error al enviar email');
-          setIsSubmitting(false);
-          return false;
-        }
-      }
-
-      console.log('🌐 Enviando email directamente desde web...');
+      console.log('🚀 Enviando email con fetch directo a EmailJS API...');
       console.log('📋 Datos de la reserva:', bookingData);
 
       const templateParams = {
-        to_email: EMAIL_CONFIG.recipientEmail,
+        to_name: 'Verónica',
         from_name: bookingData.parentName,
         booking_date: bookingData.date,
         booking_time: bookingData.time,
@@ -60,6 +42,7 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
         parent_email: bookingData.email,
         parent_phone: bookingData.phone,
         notes: bookingData.notes || 'Ninguna',
+        message: `Nueva reserva de ${bookingData.parentName} para ${bookingData.numberOfKids} niño(s) el ${bookingData.date} a las ${bookingData.time}`,
       };
 
       const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -84,7 +67,7 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
         throw new Error(`Error al enviar email: ${response.status}`);
       }
 
-      console.log('✅ Email enviado correctamente desde web');
+      console.log('✅ Email enviado correctamente');
       
       setBookings(prev => [...prev, { ...newBooking, status: 'confirmed' }]);
       setIsSubmitting(false);
@@ -97,90 +80,6 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
       return false;
     }
   }, []);
-
-  const sendEmailViaWebMethod = async (bookingData: Omit<Booking, 'id' | 'status' | 'createdAt'>): Promise<boolean> => {
-    return new Promise((resolve) => {
-      try {
-        const templateParams = {
-          to_email: EMAIL_CONFIG.recipientEmail,
-          from_name: bookingData.parentName,
-          booking_date: bookingData.date,
-          booking_time: bookingData.time,
-          number_of_kids: bookingData.numberOfKids.toString(),
-          parent_name: bookingData.parentName,
-          parent_email: bookingData.email,
-          parent_phone: bookingData.phone,
-          notes: bookingData.notes || 'Ninguna',
-        };
-
-        const htmlContent = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-            <script type="text/javascript">
-              (function() {
-                console.log('📧 WebView cargado, inicializando EmailJS...');
-                
-                emailjs.init({
-                  publicKey: '${EMAIL_CONFIG.publicKey}',
-                  privateKey: '${EMAIL_CONFIG.privateKey}',
-                });
-
-                console.log('📤 Enviando email...');
-                emailjs.send(
-                  '${EMAIL_CONFIG.serviceId}',
-                  '${EMAIL_CONFIG.templateId}',
-                  ${JSON.stringify(templateParams)}
-                ).then(
-                  function(response) {
-                    console.log('✅ SUCCESS!', response.status, response.text);
-                    window.ReactNativeWebView?.postMessage(JSON.stringify({ success: true }));
-                  },
-                  function(error) {
-                    console.error('❌ FAILED...', error);
-                    window.ReactNativeWebView?.postMessage(JSON.stringify({ success: false, error: error }));
-                  }
-                );
-              })();
-            </script>
-          </head>
-          <body></body>
-          </html>
-        `;
-
-        console.log('📱 Configurando WebView para Android/iOS...');
-        
-        const timeoutId = setTimeout(() => {
-          console.log('⏱️ Timeout: Email no enviado en 30 segundos');
-          delete (global as any).__emailWebView;
-          resolve(false);
-        }, 30000);
-
-        (global as any).__emailWebView = {
-          html: htmlContent,
-          onMessage: (success: boolean) => {
-            console.log('📨 Mensaje recibido del WebView:', success);
-            clearTimeout(timeoutId);
-            resolve(success);
-          },
-        };
-        
-        console.log('✅ WebView configurado y listo');
-        console.log('HTML content generado, esperando que WebView lo cargue...');
-        
-        setTimeout(() => {
-          console.log('⚠️ Verificando si WebView se cargó...');
-          if ((global as any).__emailWebView) {
-            console.log('⚠️ WebView aún no ha respondido después de 5 segundos');
-          }
-        }, 5000);
-      } catch (error) {
-        console.error('❌ Error en sendEmailViaWebMethod:', error);
-        resolve(false);
-      }
-    });
-  };
 
   return useMemo(() => ({
     bookings,

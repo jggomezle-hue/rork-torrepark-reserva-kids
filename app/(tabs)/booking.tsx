@@ -1,11 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
-import type { WebView as WebViewType } from 'react-native-webview';
-
-let WebView: any = null;
-if (Platform.OS !== 'web') {
-  WebView = require('react-native-webview').WebView;
-}
 import { Stack, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar, Clock, Users, User, Mail, Phone, FileText, CheckCircle2 } from 'lucide-react-native';
@@ -34,30 +28,6 @@ export default function BookingScreen() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [tempDateValue, setTempDateValue] = useState<string>('');
-  const [showWebView, setShowWebView] = useState<boolean>(false);
-  const webViewRef = useRef<WebViewType | null>(null);
-
-  useEffect(() => {
-    if (Platform.OS !== 'web') {
-      console.log('🔍 Iniciando chequeo periódico del WebView...');
-      const checkWebView = setInterval(() => {
-        const emailWebView = (global as any).__emailWebView;
-        if (emailWebView?.html && !showWebView) {
-          console.log('📱 WebView de email detectado en Android/iOS');
-          console.log('HTML length:', emailWebView.html.length);
-          setShowWebView(true);
-        } else if (!emailWebView?.html && showWebView) {
-          console.log('🗑️ WebView de email removido');
-          setShowWebView(false);
-        }
-      }, 50);
-
-      return () => {
-        console.log('🚧 Limpiando chequeo de WebView');
-        clearInterval(checkWebView);
-      };
-    }
-  }, [showWebView]);
 
   const handleDateChange = (event: any, date?: Date) => {
     if (Platform.OS === 'android') {
@@ -350,52 +320,6 @@ export default function BookingScreen() {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-
-        {Platform.OS !== 'web' && showWebView && (global as any).__emailWebView?.html && (
-          <WebView
-            ref={webViewRef}
-            source={{ html: (global as any).__emailWebView.html }}
-            style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }}
-            onMessage={(event: any) => {
-              try {
-                console.log('📨 Evento onMessage recibido');
-                console.log('Raw data:', event.nativeEvent.data);
-                const data = JSON.parse(event.nativeEvent.data);
-                console.log('📧 Mensaje parseado de WebView:', data);
-                if ((global as any).__emailWebView?.onMessage) {
-                  console.log('📤 Llamando al callback onMessage con:', data.success);
-                  (global as any).__emailWebView.onMessage(data.success);
-                  delete (global as any).__emailWebView;
-                  console.log('🧹 Global __emailWebView limpiado');
-                }
-              } catch (error) {
-                console.error('❌ Error procesando mensaje de WebView:', error);
-                if ((global as any).__emailWebView?.onMessage) {
-                  (global as any).__emailWebView.onMessage(false);
-                  delete (global as any).__emailWebView;
-                }
-              }
-            }}
-            onError={(syntheticEvent: any) => {
-              const { nativeEvent } = syntheticEvent;
-              console.error('❌ Error en WebView:', nativeEvent);
-              console.error('Error details:', JSON.stringify(nativeEvent, null, 2));
-              if ((global as any).__emailWebView?.onMessage) {
-                (global as any).__emailWebView.onMessage(false);
-                delete (global as any).__emailWebView;
-              }
-            }}
-            onLoadStart={() => console.log('🔄 WebView iniciando carga...')}
-            onLoad={() => console.log('✅ WebView cargado correctamente')}
-            onLoadEnd={() => console.log('🏁 WebView terminó de cargar')}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            originWhitelist={['*']}
-            mixedContentMode="always"
-            thirdPartyCookiesEnabled={true}
-            sharedCookiesEnabled={true}
-          />
-        )}
       </ScrollView>
     </>
   );
