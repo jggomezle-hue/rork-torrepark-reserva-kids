@@ -32,6 +32,7 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
 
       if (Platform.OS === 'android' || Platform.OS === 'ios') {
         console.log('📱 Usando método web-compatible para Android/iOS...');
+        
         const success = await sendEmailViaWebMethod(bookingData);
         
         if (success) {
@@ -40,7 +41,7 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
           setIsSubmitting(false);
           return true;
         } else {
-          console.error('❌ No se pudo enviar email desde método web');
+          console.error('❌ Error al enviar email');
           setIsSubmitting(false);
           return false;
         }
@@ -148,36 +149,32 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
           </html>
         `;
 
-        if (Platform.OS === 'web') {
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.srcdoc = htmlContent;
-          document.body.appendChild(iframe);
-          
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-            resolve(true);
-          }, 3000);
-        } else {
-          console.log('📱 Configurando WebView para Android/iOS...');
-          
-          const timeoutId = setTimeout(() => {
-            console.log('⏱️ Timeout: Email no enviado en 30 segundos');
-            delete (global as any).__emailWebView;
-            resolve(false);
-          }, 30000);
+        console.log('📱 Configurando WebView para Android/iOS...');
+        
+        const timeoutId = setTimeout(() => {
+          console.log('⏱️ Timeout: Email no enviado en 30 segundos');
+          delete (global as any).__emailWebView;
+          resolve(false);
+        }, 30000);
 
-          (global as any).__emailWebView = {
-            html: htmlContent,
-            onMessage: (success: boolean) => {
-              console.log('📨 Mensaje recibido del WebView:', success);
-              clearTimeout(timeoutId);
-              resolve(success);
-            },
-          };
-          
-          console.log('✅ WebView configurado y listo');
-        }
+        (global as any).__emailWebView = {
+          html: htmlContent,
+          onMessage: (success: boolean) => {
+            console.log('📨 Mensaje recibido del WebView:', success);
+            clearTimeout(timeoutId);
+            resolve(success);
+          },
+        };
+        
+        console.log('✅ WebView configurado y listo');
+        console.log('HTML content generado, esperando que WebView lo cargue...');
+        
+        setTimeout(() => {
+          console.log('⚠️ Verificando si WebView se cargó...');
+          if ((global as any).__emailWebView) {
+            console.log('⚠️ WebView aún no ha respondido después de 5 segundos');
+          }
+        }, 5000);
       } catch (error) {
         console.error('❌ Error en sendEmailViaWebMethod:', error);
         resolve(false);

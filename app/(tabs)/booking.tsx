@@ -39,10 +39,12 @@ export default function BookingScreen() {
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
+      console.log('🔍 Iniciando chequeo periódico del WebView...');
       const checkWebView = setInterval(() => {
         const emailWebView = (global as any).__emailWebView;
         if (emailWebView?.html && !showWebView) {
           console.log('📱 WebView de email detectado en Android/iOS');
+          console.log('HTML length:', emailWebView.html.length);
           setShowWebView(true);
         } else if (!emailWebView?.html && showWebView) {
           console.log('🗑️ WebView de email removido');
@@ -50,7 +52,10 @@ export default function BookingScreen() {
         }
       }, 50);
 
-      return () => clearInterval(checkWebView);
+      return () => {
+        console.log('🚧 Limpiando chequeo de WebView');
+        clearInterval(checkWebView);
+      };
     }
   }, [showWebView]);
 
@@ -353,14 +358,18 @@ export default function BookingScreen() {
             style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }}
             onMessage={(event: any) => {
               try {
+                console.log('📨 Evento onMessage recibido');
+                console.log('Raw data:', event.nativeEvent.data);
                 const data = JSON.parse(event.nativeEvent.data);
-                console.log('📧 Mensaje recibido de WebView:', data);
+                console.log('📧 Mensaje parseado de WebView:', data);
                 if ((global as any).__emailWebView?.onMessage) {
+                  console.log('📤 Llamando al callback onMessage con:', data.success);
                   (global as any).__emailWebView.onMessage(data.success);
                   delete (global as any).__emailWebView;
+                  console.log('🧹 Global __emailWebView limpiado');
                 }
               } catch (error) {
-                console.error('Error procesando mensaje de WebView:', error);
+                console.error('❌ Error procesando mensaje de WebView:', error);
                 if ((global as any).__emailWebView?.onMessage) {
                   (global as any).__emailWebView.onMessage(false);
                   delete (global as any).__emailWebView;
@@ -370,12 +379,15 @@ export default function BookingScreen() {
             onError={(syntheticEvent: any) => {
               const { nativeEvent } = syntheticEvent;
               console.error('❌ Error en WebView:', nativeEvent);
+              console.error('Error details:', JSON.stringify(nativeEvent, null, 2));
               if ((global as any).__emailWebView?.onMessage) {
                 (global as any).__emailWebView.onMessage(false);
                 delete (global as any).__emailWebView;
               }
             }}
+            onLoadStart={() => console.log('🔄 WebView iniciando carga...')}
             onLoad={() => console.log('✅ WebView cargado correctamente')}
+            onLoadEnd={() => console.log('🏁 WebView terminó de cargar')}
             javaScriptEnabled={true}
             domStorageEnabled={true}
             originWhitelist={['*']}
