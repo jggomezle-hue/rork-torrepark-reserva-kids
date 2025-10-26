@@ -9,8 +9,8 @@ run = ["sh", "-c", "bun run backend/server.ts"]
 deploymentTarget = "cloudrun"
 
 [[ports]]
-localPort = 5000
+localPort = 3000
 externalPort = 80
 
 [env]
-PORT = "5000"
+PORT = "3000"
