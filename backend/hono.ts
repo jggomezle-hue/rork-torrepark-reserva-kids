@@ -7,29 +7,11 @@ import { z } from "zod";
 
 const app = new Hono();
 
-app.use("*", cors());
-
-app.use(
-  "/api/trpc/*",
-  trpcServer({
-    router: appRouter,
-    createContext,
-  })
-);
-
-app.get("/", (c) => {
-  return c.json({ status: "ok", message: "API is running" });
-});
-
-const bookingSchema = z.object({
-  date: z.string(),
-  time: z.string(),
-  numberOfKids: z.number(),
-  parentName: z.string(),
-  email: z.string().email(),
-  phone: z.string(),
-  notes: z.string().optional(),
-});
+app.use("*", cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+}));
 
 app.post("/api/booking/send-email", async (c) => {
   try {
@@ -95,6 +77,28 @@ app.post("/api/booking/send-email", async (c) => {
       error: error.message || 'Error desconocido' 
     }, 500);
   }
+});
+
+app.use(
+  "/api/trpc/*",
+  trpcServer({
+    router: appRouter,
+    createContext,
+  })
+);
+
+const bookingSchema = z.object({
+  date: z.string(),
+  time: z.string(),
+  numberOfKids: z.number(),
+  parentName: z.string(),
+  email: z.string().email(),
+  phone: z.string(),
+  notes: z.string().optional(),
+});
+
+app.get("/", (c) => {
+  return c.json({ status: "ok", message: "API is running" });
 });
 
 export default app;
