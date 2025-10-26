@@ -29,13 +29,13 @@ export const getBaseUrl = (): string => {
 
   const host = (Constants as any)?.expoConfig?.hostUri?.split(":")[0] ?? (Constants as any)?.expoConfig?.hostUri;
   if (host) {
-    const url = `http://${host}:3000`;
+    const url = `http://${host}:5000`;
     console.log("🔗 Base URL (derived from Expo hostUri):", url);
     return url;
   }
 
-  if (Platform.OS === "android") return "http://10.0.2.2:3000";
-  if (Platform.OS === "ios") return "http://localhost:3000";
+  if (Platform.OS === "android") return "http://10.0.2.2:5000";
+  if (Platform.OS === "ios") return "http://localhost:5000";
 
   throw new Error("No se pudo determinar la URL base para la API");
 };
