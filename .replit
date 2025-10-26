@@ -1,0 +1,13 @@
+run = "bun run backend/server.ts"
+entrypoint = "backend/server.ts"
+
+[nix]
+channel = "stable-23_11"
+
+[deployment]
+run = ["sh", "-c", "bun run backend/server.ts"]
+deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
