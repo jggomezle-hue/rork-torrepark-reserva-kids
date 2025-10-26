@@ -13,6 +13,20 @@ app.use("*", cors({
   allowHeaders: ['Content-Type', 'Authorization'],
 }));
 
+const bookingSchema = z.object({
+  date: z.string(),
+  time: z.string(),
+  numberOfKids: z.number(),
+  parentName: z.string(),
+  email: z.string().email(),
+  phone: z.string(),
+  notes: z.string().optional(),
+});
+
+app.get("/", (c) => {
+  return c.json({ status: "ok", message: "API is running" });
+});
+
 app.post("/api/booking/send-email", async (c) => {
   try {
     const body = await c.req.json();
@@ -86,19 +100,5 @@ app.use(
     createContext,
   })
 );
-
-const bookingSchema = z.object({
-  date: z.string(),
-  time: z.string(),
-  numberOfKids: z.number(),
-  parentName: z.string(),
-  email: z.string().email(),
-  phone: z.string(),
-  notes: z.string().optional(),
-});
-
-app.get("/", (c) => {
-  return c.json({ status: "ok", message: "API is running" });
-});
 
 export default app;
