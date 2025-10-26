@@ -10,8 +10,9 @@ export const trpc = createTRPCReact<AppRouter>();
 export const getBaseUrl = (): string => {
   const envUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   if (envUrl && envUrl.length > 0) {
-    console.log("🔗 Base URL (env EXPO_PUBLIC_RORK_API_BASE_URL):", envUrl);
-    return envUrl;
+    const cleanUrl = envUrl.replace(/\/+$/, '');
+    console.log("🔗 Base URL (env EXPO_PUBLIC_RORK_API_BASE_URL):", cleanUrl);
+    return cleanUrl;
   }
 
   const tk = process.env.EXPO_PUBLIC_TOOLKIT_URL;
