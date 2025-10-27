@@ -2,15 +2,12 @@ import { serve } from '@hono/node-server';
 import app from './hono';
 
 const port = parseInt(process.env.PORT || '3000', 10);
-const hostname = process.env.HOST || '0.0.0.0';
 
-console.log(`🚀 Servidor iniciando en ${hostname}:${port}...`);
+console.log(`🚀 Servidor iniciando en puerto ${port}...`);
 
 serve({
   fetch: app.fetch,
   port,
-  hostname,
-}, (info: { port: number; address: string }) => {
-  console.log(`✅ Servidor corriendo en ${info.address}:${info.port}`);
-  console.log(`🌍 Accesible externamente en el puerto configurado`);
+}, (info: { port: number }) => {
+  console.log(`✅ Servidor corriendo en http://localhost:${info.port}`);
 });

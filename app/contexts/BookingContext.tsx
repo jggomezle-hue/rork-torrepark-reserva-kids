@@ -1,6 +1,6 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useState, useCallback, useMemo } from 'react';
-import { trpcClient } from '@/lib/trpc';
+import { getBaseUrl } from '@/lib/trpc';
 
 export interface Booking {
   id: string;
@@ -29,20 +29,36 @@ export const [BookingProvider, useBooking] = createContextHook(() => {
         createdAt: new Date().toISOString(),
       };
 
-      console.log('🚀 Enviando email vía tRPC booking.sendEmail ...');
+      console.log('🚀 Enviando email vía REST /api/booking/send-email ...');
       console.log('📋 Datos de la reserva:', bookingData);
 
-      const result = await trpcClient.booking.sendEmail.mutate({
-        date: bookingData.date,
-        time: bookingData.time,
-        numberOfKids: bookingData.numberOfKids,
-        parentName: bookingData.parentName,
-        email: bookingData.email,
-        phone: bookingData.phone,
-        notes: bookingData.notes,
+      const url = `${getBaseUrl()}/api/booking/send-email`;
+      console.log('🔗 Endpoint:', url);
+
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData),
       });
 
-      console.log('✅ Email enviado:', result);
+      const contentType = resp.headers.get('content-type') ?? '';
+      console.log('📥 Estado respuesta:', resp.status, contentType);
+
+      let payload: any = null;
+      if (contentType.includes('application/json')) {
+        payload = await resp.json();
+      } else {
+        const txt = await resp.text();
+        console.warn('⚠️ Respuesta no JSON (primeros 300 chars):', txt.slice(0, 300));
+        throw new Error(`Respuesta no JSON del backend: ${resp.status} ${contentType}`);
+      }
+
+      if (!resp.ok || payload?.success !== true) {
+        console.error('❌ Error backend:', payload);
+        throw new Error(payload?.error ?? `Error HTTP ${resp.status}`);
+      }
+
+      console.log('✅ Email enviado:', payload);
       setBookings(prev => [...prev, { ...newBooking, status: 'confirmed' }]);
       setIsSubmitting(false);
       return true;
