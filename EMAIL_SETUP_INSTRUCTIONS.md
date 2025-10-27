@@ -29,6 +29,12 @@ El template de MailerSend debe incluir estas variables:
 - `{{parent_phone}}` - Teléfono de contacto
 - `{{notes}}` - Notas adicionales
 
+## Formato del Email
+
+El email enviado incluye automáticamente:
+- **Subject (Asunto):** Nueva Reserva - TORREPARK - [fecha de la reserva]
+- **Template ID:** jpzkmgqyj5ml059v (con todas las variables mencionadas arriba)
+
 ## Actualizar Configuración
 
 Si necesitas cambiar alguna configuración:

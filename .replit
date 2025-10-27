@@ -1,5 +1,6 @@
 run = "bun run backend/server.ts"
 entrypoint = "backend/server.ts"
+modules = ["nodejs-20", "bun"]
 
 [nix]
 channel = "stable-23_11"
@@ -12,5 +13,36 @@ deploymentTarget = "cloudrun"
 localPort = 3000
 externalPort = 80
 
+[[ports]]
+localPort = 3001
+externalPort = 3001
+
 [env]
 PORT = "3000"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Server"
+
+[[workflows.workflow]]
+name = "Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bun run backend/start-server.ts"
+waitForPort = 3001
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[agent]
+expertMode = true
