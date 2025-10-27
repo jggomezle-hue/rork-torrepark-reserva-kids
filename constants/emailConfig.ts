@@ -1,7 +1,7 @@
-export const EMAIL_CONFIG = {
-  publicKey: 'vKT2cYXEJMToSo5ON',
-  privateKey: 'k1lHhLDGNgIyawZS1dSIK',
-  serviceId: 'service_l88y07b',
-  templateId: 'template_f9nrjl2',
+export const MAILERSEND_CONFIG = {
+  domain: 'test-pzkmgq7x6v2l059v.mlsender.net',
+  templateId: 'jpzkmgqyj5ml059v',
   recipientEmail: 'jggomezle@gmail.com',
+  fromEmail: 'noreply@test-pzkmgq7x6v2l059v.mlsender.net',
+  fromName: 'TORREPARK',
 };

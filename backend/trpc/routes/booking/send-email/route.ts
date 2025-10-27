@@ -1,5 +1,6 @@
 import { publicProcedure } from '../../../create-context';
 import { z } from 'zod';
+import { MAILERSEND_CONFIG } from '../../../../../constants/emailConfig';
 
 const bookingSchema = z.object({
   date: z.string(),
@@ -14,42 +15,72 @@ const bookingSchema = z.object({
 export const sendEmailRoute = publicProcedure
   .input(bookingSchema)
   .mutation(async ({ input }) => {
-    const EMAIL_CONFIG = {
-      publicKey: 'vKT2cYXEJMToSo5ON',
-      privateKey: 'k1lHhLDGNgIyawZS1dSIK',
-      serviceId: 'service_l88y07b',
-      templateId: 'template_f9nrjl2',
-      recipientEmail: 'jggomezle@gmail.com',
+    const apiToken = process.env.MAILERSEND_API_TOKEN;
+
+    if (!apiToken) {
+      throw new Error('MAILERSEND_API_TOKEN no está configurado');
+    }
+
+    const emailData = {
+      from: {
+        email: MAILERSEND_CONFIG.fromEmail,
+        name: MAILERSEND_CONFIG.fromName,
+      },
+      to: [
+        {
+          email: MAILERSEND_CONFIG.recipientEmail,
+          name: 'TORREPARK Admin',
+        },
+      ],
+      template_id: MAILERSEND_CONFIG.templateId,
+      variables: [
+        {
+          email: MAILERSEND_CONFIG.recipientEmail,
+          substitutions: [
+            {
+              var: 'booking_date',
+              value: input.date,
+            },
+            {
+              var: 'booking_time',
+              value: input.time,
+            },
+            {
+              var: 'number_of_kids',
+              value: input.numberOfKids.toString(),
+            },
+            {
+              var: 'parent_name',
+              value: input.parentName,
+            },
+            {
+              var: 'parent_email',
+              value: input.email,
+            },
+            {
+              var: 'parent_phone',
+              value: input.phone,
+            },
+            {
+              var: 'notes',
+              value: input.notes || 'Ninguna',
+            },
+          ],
+        },
+      ],
     };
 
-    const templateParams = {
-      to_email: EMAIL_CONFIG.recipientEmail,
-      from_name: input.parentName,
-      booking_date: input.date,
-      booking_time: input.time,
-      number_of_kids: input.numberOfKids.toString(),
-      parent_name: input.parentName,
-      parent_email: input.email,
-      parent_phone: input.phone,
-      notes: input.notes || 'Ninguna',
-    };
-
-    console.log('📧 Enviando email desde el servidor...');
-    console.log('📋 Parámetros:', templateParams);
+    console.log('📧 Enviando email con MailerSend...');
+    console.log('📋 Template ID:', MAILERSEND_CONFIG.templateId);
 
     try {
-      const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      const response = await fetch('https://api.mailersend.com/v1/email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiToken}`,
         },
-        body: JSON.stringify({
-          service_id: EMAIL_CONFIG.serviceId,
-          template_id: EMAIL_CONFIG.templateId,
-          user_id: EMAIL_CONFIG.publicKey,
-          accessToken: EMAIL_CONFIG.privateKey,
-          template_params: templateParams,
-        }),
+        body: JSON.stringify(emailData),
       });
 
       console.log('📬 Respuesta del servidor:', response.status);
@@ -62,7 +93,7 @@ export const sendEmailRoute = publicProcedure
 
       const responseText = await response.text();
       console.log('📬 Texto de respuesta:', responseText);
-      console.log('✅ Email enviado correctamente desde el servidor');
+      console.log('✅ Email enviado correctamente con MailerSend');
       return { success: true, message: 'Email enviado correctamente' };
     } catch (error: any) {
       console.error('❌ Error al enviar email:', error);
